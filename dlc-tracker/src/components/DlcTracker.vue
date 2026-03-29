@@ -1,27 +1,55 @@
 <template>
-  <div class="dlc-app">
-    <header class="dlc-header">
-      <h1>DLC Stock</h1>
-      <div class="dlc-header-actions">
-        <input
-          v-model="search"
-          class="dlc-search"
-          type="text"
-          placeholder="Rechercher un produit..."
-        />
-        <button class="dlc-add-btn" @click="showAddModal = true">+</button>
-      </div>
-    </header>
-    <ul class="dlc-list">
-      <li v-for="(product, idx) in filteredProducts" :key="product.id" class="dlc-list-item">
-        <span class="dlc-product-name">{{ product.name }}</span>
-        <div class="dlc-date-actions">
-          <ExpiryCircle :expiry-date="product.date" :size="52" />
-          <button class="dlc-delete-btn" @click="deleteProduct(idx)">🗑️</button>
+  <div class="dlc-bg">
+    <div class="dlc-card">
+      <!-- Header -->
+      <div class="dlc-header-premium">
+        <div class="dlc-header-top">
+          <span class="icon menu-icon">&#9632;&#9632;<br />&#9632;&#9632;</span>
+          <span class="header-date">{{ todayDate }}</span>
+          <span class="icon clock-icon">&#128337;</span>
         </div>
-      </li>
-      <li v-if="filteredProducts.length === 0" class="dlc-empty">Aucun produit à afficher</li>
-    </ul>
+        <div class="dlc-header-bottom">
+          <div class="header-title">
+            <span class="title">DLC Stock</span>
+            <span class="subtitle">{{ filteredProducts.length }} Produits</span>
+          </div>
+          <button class="add-btn" @click="showAddModal = true">Add New</button>
+        </div>
+      </div>
+      <!-- Days Row (Semaine) -->
+      <div class="days-row">
+        <div
+          v-for="(day, i) in days"
+          :key="i"
+          :class="['day-block', { active: i === selectedDay } ]"
+          @click="selectedDay = i"
+        >
+          <span class="day-num">{{ day.num }}</span>
+          <span class="day-label">{{ day.label }}</span>
+        </div>
+      </div>
+      <!-- Liste des produits (tâches) -->
+      <div class="tasks-section">
+        <div class="tasks-title">Mes produits</div>
+        <div
+          v-for="(product, idx) in filteredProducts"
+          :key="product.id"
+          :class="['task-item', { active: idx === selectedProduct }]"
+          @click="selectedProduct = idx"
+        >
+          <div class="task-time">{{ formatDate(product.date) }}</div>
+          <div class="task-main">
+            <div class="task-title">{{ product.name }}</div>
+            <div class="task-desc">À consommer avant</div>
+          </div>
+          <div class="task-check" @click.stop="deleteProduct(idx)">
+            <span class="checkbox delete-btn">🗑️</span>
+          </div>
+        </div>
+        <div v-if="filteredProducts.length === 0" class="dlc-empty">Aucun produit à afficher</div>
+      </div>
+    </div>
+    <!-- Modal d'ajout -->
     <div v-if="showAddModal" class="dlc-modal-overlay">
       <div class="dlc-modal">
         <h2>Ajouter un produit</h2>
@@ -34,12 +62,22 @@
   </div>
 </template>
 <script>
-import ExpiryCircle from './ExpiryCircle.vue'
 export default {
   name: 'DlcTracker',
-  components: { ExpiryCircle },
   data() {
     return {
+      todayDate: this.getToday(),
+      days: [
+        { num: 25, label: 'Lun' },
+        { num: 26, label: 'Mar' },
+        { num: 27, label: 'Mer' },
+        { num: 28, label: 'Jeu' },
+        { num: 29, label: 'Ven' },
+        { num: 30, label: 'Sam' },
+        { num: 31, label: 'Dim' },
+      ],
+      selectedDay: new Date().getDay() - 1,
+      selectedProduct: 0,
       products: [],
       showAddModal: false,
       newProduct: { name: '', date: '' },
@@ -53,6 +91,15 @@ export default {
     },
   },
   methods: {
+    getToday() {
+      const d = new Date()
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })
+    },
+    formatDate(date) {
+      if (!date) return ''
+      const d = new Date(date)
+      return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+    },
     addProduct() {
       if (!this.newProduct.name || !this.newProduct.date) return
       this.products.push({
@@ -70,148 +117,236 @@ export default {
 }
 </script>
 <style scoped>
-  .dlc-app {
-    max-width: 500px;
-    margin: 40px auto;
-    background: rgba(255,255,255,0.18);
-    border-radius: 22px;
+.dlc-bg {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e9e4f0 0%, #c7c5f4 60%, #a084ee 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+  .dlc-card {
+    width: 360px;
+    max-width: 98vw;
+    min-width: 240px;
+    min-height: 485px;
+    border-radius: 36px;
+    background: rgba(255,255,255,0.85);
     box-shadow: 0 8px 32px 0 rgba(31,38,135,0.18);
-    padding: 32px 24px 24px 24px;
-    font-family: 'Segoe UI', Arial, sans-serif;
-    backdrop-filter: blur(18px) saturate(180%);
-    -webkit-backdrop-filter: blur(18px) saturate(180%);
-    border: 1.5px solid rgba(255,255,255,0.22);
-    overflow: hidden;
-  }
-  .dlc-header {
+    padding: 28px 18px 18px 18px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    margin-bottom: 24px;
-    background: rgba(255,255,255,0.12);
-    border-radius: 18px;
-    padding: 12px 10px 8px 10px;
-    box-shadow: 0 2px 12px rgba(31,38,135,0.08);
-    border: 1px solid rgba(255,255,255,0.18);
+    gap: 18px;
+    position: relative;
   }
-.dlc-header h1 {
-  margin: 0 0 12px 0;
-  font-size: 2.1rem;
-  color: #2d3a4b;
-  letter-spacing: 1px;
+.dlc-header-premium {
+  background: linear-gradient(135deg, #7f53ac 0%, #647dee 100%);
+  border-radius: 28px;
+  padding: 18px 18px 14px 18px;
+  box-shadow: 0 2px 12px rgba(127,83,172,0.08);
+  color: #fff;
+  margin-bottom: 8px;
 }
-  .dlc-header-actions {
-    display: flex;
-    flex-direction: row;
-    width: 100%;
-    gap: 10px;
-    align-items: center;
-    background: rgba(255,255,255,0.18);
-    border-radius: 12px;
-    box-shadow: 0 1px 8px rgba(31,38,135,0.06);
-    padding: 4px 4px 4px 8px;
-  }
-  .dlc-search {
-    flex: 1;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1.5px solid rgba(255,255,255,0.22);
-    font-size: 1rem;
-    outline: none;
-    background: rgba(255,255,255,0.32);
-    box-shadow: 0 2px 8px rgba(31,38,135,0.06);
-    color: #2d3a4b;
-    transition: border 0.2s, background 0.2s;
-  }
-  .dlc-search:focus {
-    border: 1.5px solid #6c63ff;
-    background: rgba(255,255,255,0.48);
-  }
-.dlc-search:focus {
-  border: 1.5px solid #6c63ff;
-}
-  .dlc-add-btn {
-    background: linear-gradient(135deg, #6c63ff 60%, #a084ee 100%);
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 38px;
-    height: 38px;
-    font-size: 1.6rem;
-    cursor: pointer;
-    box-shadow: 0 2px 8px rgba(108,99,255,0.18);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.2s, box-shadow 0.2s;
-  }
-  .dlc-add-btn:hover {
-    background: linear-gradient(135deg, #5548c8 60%, #a084ee 100%);
-    box-shadow: 0 4px 16px rgba(108,99,255,0.22);
-  }
-.dlc-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.dlc-list-item {
+.dlc-header-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0f0f0;
-  font-size: 1.08rem;
+  margin-bottom: 10px;
 }
-.dlc-product-name {
-  flex: 1;
-  text-align: left;
-  color: #2d3a4b;
+.icon {
+  font-size: 1.3rem;
+  opacity: 0.85;
+  min-width: 32px;
+  text-align: center;
 }
-.dlc-date-actions {
+.menu-icon {
+  font-weight: bold;
+  letter-spacing: 1px;
+  line-height: 1.1;
+}
+.clock-icon {
+  font-size: 1.4rem;
+}
+.header-date {
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 1px;
+  opacity: 0.92;
+}
+.dlc-header-bottom {
   display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  margin-top: 2px;
 }
-.dlc-date-circle {
-  display: inline-block;
-  min-width: 48px;
-  text-align: center;
-  padding: 7px 0;
-  border-radius: 50%;
-  font-weight: bold;
+.header-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.title {
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.subtitle {
   font-size: 1.05rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition:
-    background 0.2s,
-    color 0.2s;
+  color: #fff;
+  opacity: 0.7;
+  font-weight: 400;
+  margin-top: 2px;
 }
-.dlc-green {
-  background: #e6f9e7;
-  color: #2ecc40;
-  border: 2px solid #2ecc40;
-}
-.dlc-red {
-  background: #ffeaea;
-  color: #e74c3c;
-  border: 2px solid #e74c3c;
-}
-.dlc-gray {
-  background: #f4f4f4;
-  color: #b0b0b0;
-  border: 2px solid #b0b0b0;
-}
-.dlc-delete-btn {
-  background: none;
+.add-btn {
+  background: #fff;
+  color: #7f53ac;
+  font-weight: 600;
   border: none;
-  color: #e74c3c;
-  font-size: 1.2rem;
+  border-radius: 16px;
+  padding: 8px 22px;
+  font-size: 1.08rem;
+  box-shadow: 0 2px 8px rgba(127,83,172,0.10);
   cursor: pointer;
-  padding: 4px 6px;
-  border-radius: 6px;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
 }
-.dlc-delete-btn:hover {
+.add-btn:hover {
+  background: #f3eaff;
+  color: #5e3a9c;
+  box-shadow: 0 4px 16px rgba(127,83,172,0.16);
+}
+.days-row {
+  display: flex;
+  gap: 10px;
+  margin: 0 0 8px 0;
+  justify-content: space-between;
+}
+.day-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 56px;
+  border-radius: 18px;
+  background: #f3f3fa;
+  color: #7f53ac;
+  font-weight: 500;
+  font-size: 1.08rem;
+  box-shadow: 0 1px 4px rgba(127,83,172,0.06);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.day-block.active {
+  background: linear-gradient(135deg, #7f53ac 0%, #647dee 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(127,83,172,0.13);
+}
+.day-num {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+.day-label {
+  font-size: 0.95rem;
+  opacity: 0.8;
+}
+.tasks-section {
+  margin-top: 8px;
+}
+.tasks-title {
+  font-size: 1.18rem;
+  font-weight: 600;
+  color: #7f53ac;
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+.task-item {
+  display: flex;
+  align-items: center;
+  background: #f7f7fb;
+  border-radius: 18px;
+  box-shadow: 0 2px 8px rgba(127,83,172,0.07);
+  padding: 14px 14px 14px 16px;
+  margin-bottom: 12px;
+  transition: background 0.2s, color 0.2s;
+  cursor: pointer;
+}
+.task-item.active {
+  background: linear-gradient(135deg, #7f53ac 0%, #647dee 100%);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(127,83,172,0.13);
+}
+.task-time {
+  min-width: 80px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #7f53ac;
+  opacity: 0.85;
+  margin-right: 12px;
+}
+.task-item.active .task-time {
+  color: #fff;
+  opacity: 1;
+}
+.task-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.task-title {
+  font-size: 1.13rem;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+.task-desc {
+  font-size: 0.98rem;
+  color: #7f53ac;
+  opacity: 0.7;
+  font-weight: 400;
+}
+.task-item.active .task-title,
+.task-item.active .task-desc {
+  color: #fff;
+  opacity: 1;
+}
+.task-check {
+  margin-left: 14px;
+  display: flex;
+  align-items: center;
+}
+.checkbox {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 2.5px solid #7f53ac;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border 0.2s;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+.checkbox.delete-btn {
+  background: #fff;
+  color: #e74c3c;
+  border: 2.5px solid #e74c3c;
+  font-size: 1.2rem;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(231,76,60,0.08);
+  margin-left: 6px;
+  transition: background 0.2s, color 0.2s;
+}
+.checkbox.delete-btn:hover {
   background: #ffeaea;
+  color: #fff;
+  border: 2.5px solid #e74c3c;
 }
 .dlc-empty {
   text-align: center;
@@ -242,11 +377,19 @@ export default {
   align-items: stretch;
 }
 .dlc-modal input[type='text'],
+.dlc-modal input[type='text'] {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  font-size: 0.5rem;
+  outline: none;
+  margin-bottom: 8px;
+}
 .dlc-modal input[type='date'] {
   padding: 8px 12px;
   border-radius: 8px;
   border: 1px solid #e0e0e0;
-  font-size: 1rem;
+  font-size: 0.5rem;
   outline: none;
   margin-bottom: 8px;
 }
@@ -269,51 +412,41 @@ export default {
   color: #2d3a4b !important;
   margin-top: 0;
 }
-  /* Responsive pour iPhone 6 et petits écrans */
-  @media (max-width: 400px) {
-    .dlc-app {
-      max-width: 100vw;
-      padding: 12px 2vw 12px 2vw;
-      border-radius: 0;
-      box-shadow: none;
-    }
-    .dlc-header h1 {
-      font-size: 1.3rem;
-    }
-    .dlc-header-actions {
-      flex-direction: row;
-      gap: 6px;
-      padding: 2px 2px 2px 4px;
-    }
-    .dlc-search {
-      font-size: 0.95rem;
-      padding: 7px 8px;
-    }
-    .dlc-add-btn {
-      width: 32px;
-      height: 32px;
-      font-size: 1.2rem;
-    }
-    .dlc-list-item {
-      font-size: 0.98rem;
-      padding: 8px 0;
-    }
-    .dlc-date-actions {
-      gap: 6px;
-    }
-    .dlc-modal {
-      min-width: unset;
-      width: 95vw;
-      padding: 18px 8px 12px 8px;
-    }
-    .dlc-modal input[type='text'],
-    .dlc-modal input[type='date'] {
-      font-size: 0.95rem;
-      padding: 7px 8px;
-    }
-    .dlc-modal button {
-      font-size: 0.95rem;
-      padding: 8px 0;
-    }
+@media (max-width: 430px) {
+  .dlc-card {
+    width: 240px;
+    min-width: 240px;
+    max-width: 98vw;
+    height: 485px;
+    min-height: 485px;
+    max-height: 98vh;
+    padding: 10px 6px 8px 6px;
+    border-radius: 24px;
+    overflow-y: auto;
   }
+  .dlc-header-premium {
+    border-radius: 18px;
+    padding: 12px 8px 8px 8px;
+  }
+  .days-row {
+    gap: 4px;
+  }
+  .day-block {
+    width: 32px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 0.95rem;
+  }
+  .task-item {
+    border-radius: 10px;
+    padding: 8px 4px 8px 6px;
+    margin-bottom: 6px;
+  }
+  .checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+}
 </style>

@@ -3,14 +3,15 @@
 </template>
 
 <script>
-import DlcTracker from './components/DlcTracker.vue'
+
+import DlcTracker from "./components/DlcTracker.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: {
     DlcTracker,
   },
-}
+};
 </script>
 
 <style lang="scss">
